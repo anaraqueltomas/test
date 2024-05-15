@@ -1,0 +1,42 @@
+name: Add tool
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  creating_pull_request:
+    name: Creating pull request
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Extract branch name
+        id: extract_branch
+        run: echo "branch=${GITHUB_HEAD_REF:-${GITHUB_REF#refs/heads/}}" >> $GITHUB_ENV
+
+      - name: Debug - Check branch name
+        run: echo "Branch name is ${{ env.branch }}"
+
+      - name: Install GitHub CLI
+        run: sudo apt-get install -y gh
+
+      - name: Authenticate with GitHub CLI
+        run: |
+          unset GITHUB_TOKEN
+          echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Debug - Check authentication status
+        run: gh auth status
+
+      - name: Create pull request
+        run: gh pr create --repo anaraqueltomas/test -B master -H ${{ env.branch }} --title 'New tool' --body 'New tool body'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
